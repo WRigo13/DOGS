@@ -68,7 +68,7 @@
         #fabTop { position:fixed; bottom:96px; right:calc(50% - 225px + 16px); background:var(--brand); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1rem; cursor:pointer; box-shadow:0 4px 16px rgba(255,140,66,.4); display:none; align-items:center; justify-content:center; z-index:200; transition:opacity .2s; }
 
         /* BOTTOM NAV */
-        .bottom-nav { background:rgba(255,255,255,.96); backdrop-filter:blur(10px); border-top:1px solid #edf2f7; display:flex; justify-content:space-around; padding:10px 20px; padding-bottom:max(20px, env(safe-area-inset-bottom)); flex-shrink:0; }
+        .bottom-nav { background:rgba(255,255,255,.96); backdrop-filter:blur(10px); border-top:1px solid #edf2f7; display:flex; justify-content:space-around; padding:8px 4px; padding-bottom:max(12px, env(safe-area-inset-bottom, 8px)); flex-shrink:0; }
         .nav-btn { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:.65rem; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer; transition:color .15s; position:relative; min-width:44px; min-height:44px; justify-content:center; padding:4px; }
         .nav-btn.active { color:var(--brand); }
         .nav-btn i { font-size:1.4rem; }
@@ -158,7 +158,7 @@
         .add-cmt-avatar { width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--brand); flex-shrink:0; background:#fed7aa; }
         .add-cmt input { flex:1; padding:8px 14px; border-radius:40px; border:1.5px solid #e2e8f0; font-family:inherit; font-size:.8rem; outline:none; background:#f8fafc; }
         .add-cmt input:focus { border-color:var(--brand); background:#fff; }
-        .btn-cmt-send { background:none; border:none; color:var(--brand); cursor:pointer; font-weight:700; font-size:.82rem; min-height:36px; padding:0 4px; }
+        .btn-cmt-send { background:none; border:none; color:var(--brand); cursor:pointer; font-weight:700; font-size:1rem; min-height:36px; padding:0 8px; display:flex; align-items:center; flex-shrink:0; }
         .interest-btn { background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#fff; border:none; border-radius:40px; padding:6px 14px; font-size:.75rem; font-weight:700; cursor:pointer; min-height:36px; }
 
         /* INTEREST MODAL */
@@ -838,7 +838,7 @@ function buildPostCard(post) {
         <div class="add-cmt">
             <img class="add-cmt-avatar" src="${esc(userAv)}" onerror="this.src='https://via.placeholder.com/28'" alt="Meu avatar">
             <input type="text" id="ci-${esc(post.id)}" placeholder="Adicione um comentário...">
-            <button class="btn-cmt-send" data-act="cmt-send" data-id="${esc(post.id)}" aria-label="Enviar comentário">Publicar</button>
+            <button class="btn-cmt-send" data-act="cmt-send" data-id="${esc(post.id)}" aria-label="Enviar comentário"><i class="fas fa-paper-plane"></i></button>
         </div>
 
     </article>`;
@@ -1436,113 +1436,178 @@ function openChat(id) {
 // NOVO POST MODAL
 // ============================================================
 function showNewPostModal() {
-    const myPet = petsData.find(p => p.user_id === currentUser?.id) || petsData[0];
-    const m = document.createElement('div');
-    m.className = 'modal-bg';
-    m.setAttribute('role', 'dialog');
-    m.setAttribute('aria-modal', 'true');
-    m.setAttribute('aria-label', 'Novo post');
-    m.innerHTML = `
-        <div class="modal-box" style="max-height:90vh;overflow-y:auto">
-            <h3>📸 Novo post</h3>
-            <div id="npPreviewWrap" style="width:100%;aspect-ratio:1/1;background:#f1f5f9;border-radius:16px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;cursor:pointer" id="npPreviewClick">
-                <div id="npPlaceholder" style="text-align:center;color:#94a3b8">
-                    <div style="font-size:2.5rem">📷</div>
-                    <div style="font-size:.82rem;margin-top:6px">Toque para escolher foto ou vídeo</div>
-                </div>
-                <img id="npImgPreview" style="display:none;width:100%;height:100%;object-fit:cover" alt="Preview">
-                <video id="npVidPreview" style="display:none;width:100%;height:100%;object-fit:cover" controls></video>
-            </div>
-            <input type="file" id="npFile" accept="${[...ALLOWED_IMAGE_TYPES,...ALLOWED_VIDEO_TYPES].join(',')}" style="display:none">
-            <label for="npCaption" style="font-size:.8rem;font-weight:600;color:var(--muted)">Legenda</label>
-            <textarea id="npCaption" rows="3" placeholder="Conte o momento... 🐾" style="width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;font-family:inherit;font-size:.85rem;outline:none;resize:vertical;margin-bottom:8px;box-sizing:border-box"></textarea>
-            <label for="npLocation" style="font-size:.8rem;font-weight:600;color:var(--muted)">Local (opcional)</label>
-            <input id="npLocation" placeholder="Ex: Parque da Cidade" style="width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;font-family:inherit;font-size:.85rem;outline:none;margin-bottom:14px;box-sizing:border-box">
-            <div id="npProgress" class="upload-progress" style="display:none;margin-bottom:10px">
-                <div style="display:flex;align-items:center;gap:10px"><div class="spinner"></div><span id="npLabel" style="font-size:.83rem">Publicando...</span></div>
-                <div class="upload-progress-bar"><div class="upload-progress-fill" id="npFill" style="width:0%"></div></div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" id="npCancel">Cancelar</button>
-                <button class="btn-save" id="npPublish" disabled>Publicar</button>
-            </div>
-        </div>`;
-    document.body.appendChild(m);
+    // Resolve o pet do usuário (não depende de escopo externo)
+    const myPetLocal = petsData.find(p => p.user_id === currentUser?.id) || null;
+
+    // ── Constrói o modal sem innerHTML para evitar conflito de IDs ──
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-bg';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    const box = document.createElement('div');
+    box.className = 'modal-box';
+    box.style.cssText = 'max-height:90vh;overflow-y:auto;width:min(380px,calc(100vw - 32px))';
+
+    // Título
+    const title = document.createElement('h3');
+    title.textContent = '📸 Novo post';
+    box.appendChild(title);
+
+    // Área de preview (clicável)
+    const previewWrap = document.createElement('div');
+    previewWrap.style.cssText = 'width:100%;aspect-ratio:1/1;background:#f1f5f9;border-radius:16px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative';
+    const placeholder = document.createElement('div');
+    placeholder.style.cssText = 'text-align:center;color:#94a3b8;pointer-events:none';
+    placeholder.innerHTML = '<div style="font-size:2.5rem">📷</div><div style="font-size:.82rem;margin-top:6px">Toque para escolher foto ou vídeo</div>';
+    const imgPrev = document.createElement('img');
+    imgPrev.style.cssText = 'display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+    imgPrev.alt = 'Preview';
+    const vidPrev = document.createElement('video');
+    vidPrev.style.cssText = 'display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+    vidPrev.controls = true;
+    previewWrap.appendChild(placeholder);
+    previewWrap.appendChild(imgPrev);
+    previewWrap.appendChild(vidPrev);
+    box.appendChild(previewWrap);
+
+    // Input file FORA da previewWrap para evitar propagação
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES].join(',');
+    fileInput.style.display = 'none';
+    box.appendChild(fileInput);
+
+    // Legenda
+    const lblCap = document.createElement('label');
+    lblCap.style.cssText = 'font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin:0 0 6px';
+    lblCap.textContent = 'Legenda';
+    const caption = document.createElement('textarea');
+    caption.rows = 3;
+    caption.placeholder = 'Conte o momento... 🐾';
+    caption.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;font-family:inherit;font-size:.85rem;outline:none;resize:vertical;margin-bottom:8px;box-sizing:border-box';
+    box.appendChild(lblCap);
+    box.appendChild(caption);
+
+    // Local
+    const lblLoc = document.createElement('label');
+    lblLoc.style.cssText = 'font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin:0 0 6px';
+    lblLoc.textContent = 'Local (opcional)';
+    const locInput = document.createElement('input');
+    locInput.placeholder = 'Ex: Parque da Cidade';
+    locInput.style.cssText = 'width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;font-family:inherit;font-size:.85rem;outline:none;margin-bottom:14px;box-sizing:border-box';
+    box.appendChild(lblLoc);
+    box.appendChild(locInput);
+
+    // Progress bar
+    const progDiv = document.createElement('div');
+    progDiv.className = 'upload-progress';
+    progDiv.style.display = 'none';
+    progDiv.style.marginBottom = '10px';
+    const progFill = document.createElement('div');
+    progFill.className = 'upload-progress-fill';
+    progFill.style.width = '0%';
+    const progLabel = document.createElement('span');
+    progLabel.style.fontSize = '.83rem';
+    progLabel.textContent = 'Publicando...';
+    progDiv.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><div class="spinner"></div></div><div class="upload-progress-bar"></div>';
+    progDiv.querySelector('div').appendChild(progLabel);
+    progDiv.querySelector('.upload-progress-bar').appendChild(progFill);
+    box.appendChild(progDiv);
+
+    // Botões
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    const btnCancel = document.createElement('button');
+    btnCancel.className = 'btn-cancel';
+    btnCancel.textContent = 'Cancelar';
+    const btnPublish = document.createElement('button');
+    btnPublish.className = 'btn-save';
+    btnPublish.textContent = 'Publicar';
+    btnPublish.disabled = true;
+    actions.appendChild(btnCancel);
+    actions.appendChild(btnPublish);
+    box.appendChild(actions);
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
 
     let selectedFile = null;
     let mediaType = 'image';
 
-    const previewWrap = m.querySelector('#npPreviewWrap');
-    previewWrap.onclick = () => m.querySelector('#npFile').click();
+    // Abre o seletor de arquivo ao clicar na área de preview
+    previewWrap.addEventListener('click', () => fileInput.click());
 
-    m.querySelector('#npFile').onchange = e => {
-        selectedFile = e.target.files[0];
-        if (!selectedFile) return;
-        try { validateFile(selectedFile, true); } catch(err) { toast('❌ ' + err.message); selectedFile = null; return; }
-        mediaType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
-        const url = URL.createObjectURL(selectedFile);
-        m.querySelector('#npPlaceholder').style.display = 'none';
+    fileInput.addEventListener('change', e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        try { validateFile(f, true); } catch(err) { toast('❌ ' + err.message); return; }
+        selectedFile = f;
+        mediaType = f.type.startsWith('image/') ? 'image' : 'video';
+        const objUrl = URL.createObjectURL(f);
+        placeholder.style.display = 'none';
         if (mediaType === 'image') {
-            const img = m.querySelector('#npImgPreview');
-            img.src = url; img.style.display = 'block';
-            m.querySelector('#npVidPreview').style.display = 'none';
+            imgPrev.src = objUrl;
+            imgPrev.style.display = 'block';
+            vidPrev.style.display = 'none';
         } else {
-            const vid = m.querySelector('#npVidPreview');
-            vid.src = url; vid.style.display = 'block';
-            m.querySelector('#npImgPreview').style.display = 'none';
+            vidPrev.src = objUrl;
+            vidPrev.style.display = 'block';
+            imgPrev.style.display = 'none';
         }
-        m.querySelector('#npPublish').disabled = false;
-    };
+        btnPublish.disabled = false;
+    });
 
-    m.querySelector('#npPublish').onclick = async () => {
+    btnPublish.addEventListener('click', async () => {
         if (!selectedFile) { toast('Escolha uma foto ou vídeo'); return; }
-        const caption  = m.querySelector('#npCaption').value.trim();
-        const location = m.querySelector('#npLocation').value.trim();
-        const prog = m.querySelector('#npProgress');
-        const fill = m.querySelector('#npFill');
-        const lbl  = m.querySelector('#npLabel');
-        prog.style.display = 'block';
-        fill.style.width = '20%'; lbl.textContent = 'Enviando mídia...';
+        const cap = caption.value.trim();
+        const loc = locInput.value.trim();
+        progDiv.style.display = 'block';
+        progFill.style.width = '20%';
+        progLabel.textContent = 'Enviando mídia...';
+        btnPublish.disabled = true;
         try {
-            const mediaUrl = await uploadFile(selectedFile, `posts/${currentUser.id}/${Date.now()}`, pct => { fill.style.width = pct + '%'; });
-            fill.style.width = '80%'; lbl.textContent = 'Salvando post...';
-            const petId = myPet?.id || null;
+            const mediaUrl = await uploadFile(selectedFile, `posts/${currentUser.id}/${Date.now()}`, pct => { progFill.style.width = pct + '%'; });
+            progFill.style.width = '80%';
+            progLabel.textContent = 'Salvando post...';
+            const petId = myPetLocal?.id || null;
             const { data, error } = await sb.from('posts').insert({
                 pet_id: petId,
                 user_id: currentUser.id,
                 media_url: mediaUrl,
                 media_type: mediaType,
-                caption,
-                location
+                caption: cap,
+                location: loc
             }).select().single();
             if (error) throw error;
-            fill.style.width = '100%'; lbl.textContent = 'Publicado! 🎉';
-            // Adiciona ao feed localmente
+            progFill.style.width = '100%';
+            progLabel.textContent = 'Publicado! 🎉';
             postsData.unshift({
                 id: data?.id || 'local_' + Date.now(),
                 petId: petId,
                 petName: userProfile.name || 'Você',
                 petAvatar: userProfile.avatar_url || '',
-                mediaUrl,
-                mediaType,
-                caption,
-                location,
+                mediaUrl, mediaType,
+                caption: cap,
+                location: loc,
                 time: 'agora',
                 likes: 0,
                 comments: [],
                 for_adoption: userProfile.is_for_adoption || false,
                 adoption_desc: userProfile.adoption_description || ''
             });
-            setTimeout(() => { m.remove(); render(); toast('Post publicado! 🐾'); }, 700);
+            setTimeout(() => { overlay.remove(); render(); toast('Post publicado! 🐾'); }, 700);
         } catch(err) {
-            prog.style.display = 'none';
-            toast('Erro ao publicar: ' + err.message);
+            progDiv.style.display = 'none';
+            btnPublish.disabled = false;
+            toast('Erro ao publicar: ' + (err.message || err));
         }
-    };
+    });
 
-    m.querySelector('#npCancel').onclick = () => m.remove();
-    m.onclick = e => { if(e.target === m) m.remove(); };
-    setTimeout(() => m.querySelector('#npCaption')?.focus(), 100);
+    btnCancel.addEventListener('click', () => overlay.remove());
+    // Fechar ao clicar no overlay mas não na caixa
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    setTimeout(() => caption.focus(), 150);
 }
 
 // ============================================================
