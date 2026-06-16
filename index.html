@@ -68,7 +68,7 @@
         #fabTop { position:fixed; bottom:96px; right:calc(50% - 225px + 16px); background:var(--brand); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1rem; cursor:pointer; box-shadow:0 4px 16px rgba(255,140,66,.4); display:none; align-items:center; justify-content:center; z-index:200; transition:opacity .2s; }
 
         /* BOTTOM NAV */
-        .bottom-nav { background:rgba(255,255,255,.96); backdrop-filter:blur(10px); border-top:1px solid #edf2f7; display:flex; justify-content:space-around; padding:10px 20px 20px; flex-shrink:0; }
+        .bottom-nav { background:rgba(255,255,255,.96); backdrop-filter:blur(10px); border-top:1px solid #edf2f7; display:flex; justify-content:space-around; padding:10px 20px; padding-bottom:max(20px, env(safe-area-inset-bottom)); flex-shrink:0; }
         .nav-btn { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:.65rem; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer; transition:color .15s; position:relative; min-width:44px; min-height:44px; justify-content:center; padding:4px; }
         .nav-btn.active { color:var(--brand); }
         .nav-btn i { font-size:1.4rem; }
@@ -125,6 +125,7 @@
         /* barra de ações */
         .post-actions { display:flex; align-items:center; gap:4px; padding:10px 14px 4px; }
         .act-btn { background:none; border:none; font-size:1.35rem; cursor:pointer; display:flex; align-items:center; gap:5px; color:#64748b; font-weight:500; transition:color .15s,transform .1s; min-height:44px; padding:0 6px; }
+        .act-count { font-size:.82rem; font-weight:700; }
         .act-btn:active { transform:scale(.82); }
         .act-btn:disabled { opacity:.5; cursor:not-allowed; }
         .act-btn.liked { color:var(--brand2); }
@@ -776,9 +777,9 @@ function buildPostCard(post) {
     return `
     <article class="post-card" data-postid="${esc(post.id)}" aria-label="Post de ${esc(post.petName)}">
 
-        <!-- Header: quem postou -->
-        <div class="post-header">
-            <img class="post-avatar" src="${esc(post.petAvatar)}" onerror="this.src='https://via.placeholder.com/40'" alt="${esc(post.petName)}" data-act="viewpet" data-petid="${esc(post.petId)}">
+        <!-- Header: avatar + nome (clicável → perfil) -->
+        <div class="post-header" style="cursor:pointer" data-act="viewpet" data-petid="${esc(post.petId)}">
+            <img class="post-avatar" src="${esc(post.petAvatar)}" onerror="this.src='https://via.placeholder.com/40'" alt="${esc(post.petName)}">
             <div class="post-author-info">
                 <div class="post-author-name">
                     ${esc(post.petName)}
@@ -786,40 +787,39 @@ function buildPostCard(post) {
                 </div>
                 <div class="post-author-sub">${post.location ? esc(post.location) + ' · ' : ''}${esc(post.time)}</div>
             </div>
-            <button class="post-more-btn" data-act="more" data-id="${esc(post.id)}" aria-label="Mais opções"><i class="fas fa-ellipsis-h"></i></button>
+            <button class="post-more-btn" data-act="more" data-id="${esc(post.id)}" aria-label="Mais opções" onclick="event.stopPropagation()"><i class="fas fa-ellipsis-h"></i></button>
         </div>
 
-        <!-- Mídia -->
-        <div class="post-media-wrap" data-act="viewpet" data-petid="${esc(post.petId)}">
+        <!-- Mídia — foto/vídeo do post (sem rótulo de nome/raça) -->
+        <div class="post-media-wrap">
             ${post.mediaType === 'video'
                 ? `<video class="post-media" src="${esc(post.mediaUrl)}" controls preload="metadata" aria-label="Vídeo de ${esc(post.petName)}"></video>`
                 : `<img class="post-media" src="${esc(post.mediaUrl)}" loading="lazy" onerror="this.src='https://via.placeholder.com/400'" alt="Post de ${esc(post.petName)}">`}
         </div>
 
-        <!-- Ações -->
+        <!-- Ações: ❤️ count · 💬 count · ✈️ · Interessado (sempre visível) -->
         <div class="post-actions">
             <button class="act-btn ${liked ? 'liked' : ''}" data-act="like" data-id="${esc(post.id)}" aria-label="${liked ? 'Remover curtida' : 'Curtir'}" ${inProgress ? 'disabled' : ''}>
                 <i class="${liked ? 'fas' : 'far'} fa-heart" aria-hidden="true"></i>
+                <span class="act-count">${post.likes || 0}</span>
             </button>
             <button class="act-btn" data-act="cmt" data-id="${esc(post.id)}" aria-label="Comentar">
                 <i class="far fa-comment" aria-hidden="true"></i>
+                <span class="act-count">${cmts.length}</span>
             </button>
             <button class="act-btn" data-act="share" data-id="${esc(post.id)}" data-name="${esc(post.petName)}" aria-label="Compartilhar">
                 <i class="far fa-paper-plane" aria-hidden="true"></i>
             </button>
-            ${post.for_adoption ? `<button class="interest-btn act-btn-share" data-act="interest" data-id="${esc(post.petId)}" data-name="${esc(post.petName)}" data-adopt="true" style="margin-left:auto"><i class="fas fa-paw" aria-hidden="true"></i> Adotar</button>` : ''}
+            <button class="interest-btn" data-act="interest" data-id="${esc(post.petId)}" data-name="${esc(post.petName)}" data-adopt="${post.for_adoption||false}" style="margin-left:auto">
+                <i class="fas fa-paw" aria-hidden="true"></i> Interessado
+            </button>
         </div>
 
-        <!-- Curtidas -->
-        <div class="post-likes">${post.likes || 0} curtidas</div>
-
-        <!-- Legenda -->
+        <!-- Legenda (só exibe se existir) -->
+        ${post.caption ? `
         <div class="post-caption">
             <span class="cap-author">${esc(post.petName)}</span>${esc(post.caption)}
-        </div>
-
-        <!-- Banner adoção -->
-        ${post.for_adoption && post.adoption_desc ? `<div class="adopt-banner"><i class="fas fa-home" aria-hidden="true"></i>${esc(post.adoption_desc)}</div>` : ''}
+        </div>` : ''}
 
         <!-- Preview comentários -->
         ${cmts.length > 0 ? `
@@ -837,7 +837,6 @@ function buildPostCard(post) {
         <!-- Input comentário -->
         <div class="add-cmt">
             <img class="add-cmt-avatar" src="${esc(userAv)}" onerror="this.src='https://via.placeholder.com/28'" alt="Meu avatar">
-            <label for="ci-${esc(post.id)}" style="position:absolute;left:-9999px">Comentar no post de ${esc(post.petName)}</label>
             <input type="text" id="ci-${esc(post.id)}" placeholder="Adicione um comentário...">
             <button class="btn-cmt-send" data-act="cmt-send" data-id="${esc(post.id)}" aria-label="Enviar comentário">Publicar</button>
         </div>
@@ -846,57 +845,42 @@ function buildPostCard(post) {
 }
 
 function afterFeed() {
-    document.getElementById('addStory')?.addEventListener('click', () => toast('📸 Stories em breve!'));
+    // "Sua foto" → abre modal de novo post
+    document.getElementById('addStory')?.addEventListener('click', () => showNewPostModal());
+
+    // Stories dos outros pets
     document.querySelectorAll('[data-spid]').forEach(el => {
         el.addEventListener('click', () => {
-            const pid = el.dataset.spid;
-            const p = petsData.find(x => x.id === pid);
+            const p = petsData.find(x => x.id === el.dataset.spid);
             if (p) openStoryModal(p);
         });
     });
 
-    // Botões de ação dos posts
+    // Delegação de eventos nos posts
     document.querySelectorAll('[data-act]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
             const act = btn.dataset.act;
             const id  = btn.dataset.id;
-            if (act === 'like') {
-                toggleLike(id);
-            }
+            if      (act === 'like')     toggleLike(id);
             else if (act === 'cmt') {
                 const b = document.getElementById('cmtbox-'+id);
-                if (b) { b.style.display = b.style.display==='block' ? 'none' : 'block'; const inp = document.getElementById('ci-'+id); if(inp) inp.focus(); }
+                if (b) { b.style.display = b.style.display==='block' ? 'none' : 'block'; document.getElementById('ci-'+id)?.focus(); }
             }
-            else if (act === 'share') {
-                const post = postsData.find(x=>x.id===id);
-                shareContent(id, post?.petName||'');
-            }
-            else if (act === 'interest') {
-                showInterestModal(btn.dataset.id, btn.dataset.name, btn.dataset.adopt === 'true');
-            }
-            else if (act === 'cmt-send') {
-                const inp = document.getElementById('ci-'+id);
-                if (inp?.value.trim()) { addComment(id, inp.value); inp.value = ''; }
-            }
-            else if (act === 'viewpet') {
-                const petId = btn.dataset.petid || btn.closest('[data-postid]')?.dataset.postid;
-                const found = petsData.find(x=>x.id===btn.dataset.petid);
-                if (found) { petProfileId = found.id; view='petProfile'; render(); }
-            }
-            else if (act === 'more') {
-                toast('⋯ Em breve: editar, denunciar...');
-            }
+            else if (act === 'share')    { const post = postsData.find(x=>x.id===id); shareContent(id, post?.petName||''); }
+            else if (act === 'interest') showInterestModal(btn.dataset.id, btn.dataset.name, btn.dataset.adopt==='true');
+            else if (act === 'cmt-send') { const inp = document.getElementById('ci-'+id); if(inp?.value.trim()){ addComment(id,inp.value); inp.value=''; } }
+            else if (act === 'viewpet')  { const found=petsData.find(x=>x.id===btn.dataset.petid); if(found){petProfileId=found.id;view='petProfile';render();} }
+            else if (act === 'more')     toast('⋯ Em breve: editar, denunciar...');
         });
     });
 
-    // Clique na mídia ou avatar leva ao perfil do pet
-    document.querySelectorAll('.post-media-wrap, .post-avatar').forEach(el => {
+    // post-header div também navega para perfil
+    document.querySelectorAll('.post-header[data-act="viewpet"]').forEach(el => {
         el.addEventListener('click', e => {
-            if (e.target.closest('[data-act]')) return;
-            const petId = el.dataset.petid || el.closest('[data-postid]')?.querySelector('.post-avatar')?.dataset.petid;
-            const found = petsData.find(x=>x.id===petId);
-            if (found) { petProfileId = found.id; view='petProfile'; render(); }
+            if (e.target.closest('button')) return; // evita disparar pelo ⋯
+            const found = petsData.find(x => x.id === el.dataset.petid);
+            if (found) { petProfileId = found.id; view = 'petProfile'; render(); }
         });
     });
 }
@@ -1568,14 +1552,15 @@ initAuth();
 </script>
 
 <script>
-// PWA install prompt only
+// PWA install prompt
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    setTimeout(() => {
-        if (deferredPrompt && currentUser) showInstallBanner();
-    }, 10000);
+    // Mostra banner assim que o usuário estiver logado (ou depois de 3s)
+    const tryShow = () => { if (deferredPrompt) showInstallBanner(); };
+    if (currentUser) tryShow();
+    else setTimeout(tryShow, 3000);
 });
 
 function showInstallBanner() {
@@ -1583,14 +1568,16 @@ function showInstallBanner() {
     const banner = document.createElement('div');
     banner.id = 'installBanner';
     banner.style.cssText = [
-        'position:fixed','bottom:88px','left:50%','transform:translateX(-50%)',
+        'position:fixed',
+        'bottom:calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
+        'left:50%','transform:translateX(-50%)',
         'background:#fff','border:1.5px solid #f0f0f0','border-radius:20px',
-        'padding:12px 18px','z-index:400','display:flex','align-items:center',
-        'gap:12px','box-shadow:0 8px 24px rgba(0,0,0,.12)','white-space:nowrap',
-        'font-family:Inter,sans-serif','font-size:.82rem'
+        'padding:12px 18px','z-index:500','display:flex','align-items:center',
+        'gap:12px','box-shadow:0 8px 24px rgba(0,0,0,.18)','white-space:nowrap',
+        'font-family:Inter,sans-serif','font-size:.82rem','max-width:calc(100vw - 32px)'
     ].join(';');
     banner.innerHTML =
-        '<span style="font-size:1.4rem" aria-hidden="true">🐾</span>' +
+        '<span style="font-size:1.4rem">🐾</span>' +
         '<div><div style="font-weight:700;color:#1e293b">Instalar Patas</div>' +
         '<div style="color:#94a3b8;font-size:.75rem">Adicionar à tela inicial</div></div>' +
         '<button id="installBtn" style="background:linear-gradient(135deg,#FF8C42,#e11d48);color:#fff;border:none;border-radius:40px;padding:7px 16px;font-weight:700;cursor:pointer;font-size:.78rem;min-height:44px">Instalar</button>' +
@@ -1599,15 +1586,16 @@ function showInstallBanner() {
     document.getElementById('installBtn').onclick = async () => {
         banner.remove();
         deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
+        const { outcome } = await deferredPrompt.userChoice;
         deferredPrompt = null;
-        if (result.outcome === 'accepted') toast('🎉 Patas instalado!');
+        if (outcome === 'accepted') toast('🎉 Patas instalado!');
     };
     document.getElementById('dismissBtn').onclick = () => banner.remove();
 }
 
 window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
+    document.getElementById('installBanner')?.remove();
     toast('🐾 Patas instalado com sucesso!');
 });
 </script>
